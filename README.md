@@ -1,87 +1,128 @@
-# 🚀 VPN Client Engine Flutter
+# VPN Client Engine React Native (React Native Module)
 
-## 🌍 Overview
+**VPN Client Engine React Native** is a React Native module that provides a high-level API for controlling VPN connections from a React Native app. It wraps the native [VPNclient Engine](https://github.com/VPNclient/VPNclient-engine) library, allowing React Native developers to integrate advanced VPN functionality into their apps with ease. With this module, you can start and stop VPN connections, switch servers, apply routing rules, and listen to connection events using simple JavaScript calls, without worrying about platform-specific implementation details.
 
-VPN Client Engine Flutter is a Flutter Plugin for managing VPN connections with an intuitive API. It provides seamless integration with various platforms, allowing developers to control VPN connections efficiently.
-![VPN Client Engine](https://raw.githubusercontent.com/VPNclient/.github/refs/heads/main/assets/vpnclient_scheme2.png)
+## 🚀 Key Features
+- **Seamless Integration:** The module is built to be cross-platform. It uses platform-specific binaries and code (written in C++ and integrated via native modules) to interface with iOS, Android, Windows, macOS, and Linux, but exposes a unified JavaScript interface. This means you write your VPN logic once in JavaScript and it works everywhere React Native does.
+- **Intuitive API:** The API is designed with React Native developers in mind. You can initialize the VPN engine, connect to a server, and listen for status changes using promises and event listeners. The module handles asynchronous calls and background threads internally.
+- **Powered by VPNclient Engine:** Under the hood, this module utilizes the native VPNclient Engine, which supports multiple protocols (Xray/VMess/VLESS/Reality, WireGuard, OpenVPN, etc.) and drivers. The module abstracts the complexity, so you can, for example, simply call `connect()` and the engine will take care of setting up a tun interface or proxy as needed on that platform.
 
+## 🖥️ Supported Platforms
 
+- ✅ iOS (15.0+)
+- ✅ Android (5.0+) 
+- ✅ macOS (Intel/Silicon)
+- ✅ Windows  
+- ✅ Unix (Linux/Debian/Ubuntu)
 
-## 🏗️ Architecture Overview
+Each platform uses the native capabilities provided by VPNclient Engine:
+- On Android and iOS, the engine uses the system VPN APIs (VpnService, NetworkExtension) to create a VPN tunnel.
+- On desktop, it can either create a TUN interface or run as a local proxy (depending on driver configuration).
+
+## 📦 Architecture
+
+Internally, the module acts as a bridge between JavaScript and the native engine. It uses a combination of native modules and platform-specific setup to communicate with the native library. The basic flow:
 
 ```mermaid
-graph TD
-  style A fill:#f9d5e5
-  A[VPNclient App] --> B[VPNclient Engine Flutter Plugin]
-  style B fill:#eeac99
-  B --> C[VPNclient Engine]
-  C --> D[iOS]
-  C --> E[Android]
-  C --> F[macOS]
-  C --> G[Windows]
-  C --> H[Linux]
+flowchart LR
+ subgraph subGraph0["React Native Application"]
+        UI@{ label: "Your React Native App (<span style=\"color:\">JavaScript)</span>" }
+  end
+ subgraph subGraph1["React Native Module"]
+        Module["VPNclient Engine React Native"]
+  end
+ subgraph subGraph2["Native Core"]
+        Core["VPNclient Engine Library"]
+  end
+    UI --> Module
+    Module --> Core
+    Core --> iOS["iOS"] & Android["Android"] & macOS["macOS"] & Windows["Windows"] & Linux["Linux"]
+
+    UI@{ shape: rect}
 ```
 
-### ✅ Supported Platforms
-- iOS 15+ (iPhone, iPad, MacOS M)
-- Android
-- 🏗️ MacOS Intel
-- 🏗️ Windows
-- 🏗️ Ubuntu
+*Diagram: Your React Native app calls into the VPNclient Engine React Native module (JavaScript layer). The module calls the native VPNclient Engine, which interfaces with the OS networking on each platform.* 
+
+From a developer perspective, you primarily interact with the **JavaScript API** provided by this module. The module takes care of invoking native methods and ensures asynchronous operations (like connecting or disconnecting) do not block the UI thread.
+
+## Platform Setup
+
+Because this module sets up actual VPN tunnels, a few platform-specific configurations are required:
+
+- **Android:** No special code is needed (the module internally uses Android's `VpnService`), but you must declare the following in your app’s AndroidManifest.xml:
+  ```xml
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  ```
+  These ensure the app can open network connections and run a foreground service for the VPN. The module will handle launching the VPN service. (Note: You do **not** need to declare `BIND_VPN_SERVICE` in the manifest; the module uses the VpnService class which has that intent filter built-in.)
+  
+- **iOS:** Enable the Personal VPN capability for your app target in Xcode (this adds the necessary entitlements). Additionally, in your Info.plist, you might need to include a usage description for VPN if required. The VPNclient Engine uses a custom bundle identifier for its network extension (`click.vpnclient.engine` with an `allow-vpn` key), but if you integrate via this module, typically enabling the capability is sufficient. When you run the app the first time, iOS will prompt the user to allow the VPN configuration.
+  
+- **Windows:** The app should be run with administrator privileges to create a TUN interface via WinTun. Alternatively, have the WinTun driver installed (which is usually present if WireGuard is installed on the system). No manifest changes are needed, but the user might need to approve driver installation if not already present.
+  
+- **macOS/Linux:** The application will likely require root privileges or proper entitlements to create a tunnel (on macOS, Network Extension needs to be signed with the correct entitlements; on Linux, either run with root or configure `/dev/net/tun` access for the user). For development on macOS, you can enable "Network Extensions" in the sandbox if running unsigned.
+
+Once the above are set up, you can use the module in your JavaScript code as shown below.
 
 ## 📥 Getting Started
 
-To start using VPN Client Engine Flutter, ensure you have Flutter installed and set up your project accordingly.
+To start using VPN Client Engine React Native, ensure you have React Native installed and set up your project accordingly.
 
 ### 📦 Installation
 ```sh
-flutter pub add vpnclient_engine_flutter
+npm install vpnclient-engine-react-native
+# or
+yarn add vpnclient-engine-react-native
+```
+
+Then link the native dependencies:
+```sh
+npx pod-install
 ```
 
 ## 📌 Example Usage
 
-```dart
-  // Initialize the Engine
-  VPNclientEngine.initialize();
+```javascript
+import VPNClientEngine from 'vpnclient-engine-react-native';
 
-  // Clear subscriptions
-  VPNclientEngine.ClearSubscriptions();
+// Initialize the Engine
+VPNClientEngine.initialize();
 
-  // Add subscription
-  VPNclientEngine.addSubscription(subscriptionURL: "https://pastebin.com/raw/ZCYiJ98W");
-  //VPNclientEngine.addSubscriptions(subscriptionURLs: ["https://pastebin.com/raw/ZCYiJ98W"]);
+// Clear subscriptions
+VPNClientEngine.clearSubscriptions();
 
-  // Update subscription
-  await VPNclientEngine.updateSubscription(subscriptionIndex: 0);
+// Add subscription
+VPNClientEngine.addSubscription("https://pastebin.com/raw/ZCYiJ98W");
+//VPNClientEngine.addSubscriptions(["https://pastebin.com/raw/ZCYiJ98W"]);
 
-  // Listen for connection status changes
-  VPNclientEngine.onConnectionStatusChanged.listen((status) {
-    print("Connection status: $status");
-  });
+// Update subscription
+await VPNClientEngine.updateSubscription(0);
 
-  //Connect to server 1
-  await VPNclientEngine.connect(subscriptionIndex: 0, serverIndex: 1);
+// Listen for connection status changes
+VPNClientEngine.addListener('onConnectionStatusChanged', (status) => {
+  console.log("Connection status:", status);
+});
 
-  // Set routing rules
-  VPNclientEngine.setRoutingRules(
-    rules: [
-      RoutingRule(appName: "YouTube", action: "proxy"),
-      RoutingRule(appName: "google.com", action: "direct"),
-      RoutingRule(domain: "ads.com", action: "block"),
-    ],
-  );
+// Connect to server 1
+await VPNClientEngine.connect(0, 1);
 
-  // Ping a server
-  VPNclientEngine.pingServer(subscriptionIndex: 0, index: 1);
+// Set routing rules
+VPNClientEngine.setRoutingRules([
+  { appName: "YouTube", action: "proxy" },
+  { appName: "google.com", action: "direct" },
+  { domain: "ads.com", action: "block" },
+]);
 
-  VPNclientEngine.onPingResult.listen((result) {
-    print("Ping result: ${result.latencyInMs} ms");
-  });
+// Ping a server
+VPNClientEngine.ping(0, 1);
+VPNClientEngine.addListener('onPingResult', (result) => {
+  console.log(`Ping: sub=${result.subscriptionIndex}, server=${result.serverIndex}, latency=${result.latencyInMs} ms`);
+});
 
-  await Future.delayed(Duration(seconds: 10));
-
-  //Disconnect
-  await VPNclientEngine.disconnect();
+setTimeout(async () => {
+  // Disconnect
+  await VPNClientEngine.disconnect();
+}, 10000);
 ```
 
 ---
@@ -91,9 +132,10 @@ flutter pub add vpnclient_engine_flutter
 ### 🔹 1. initialize()
 Initializes the VPN Client Engine. This should be called before using any other method.
 
-### 🔹 2. connect({required int subscriptionIndex,required int serverIndex})
+### 🔹 2. connect(subscriptionIndex: number, serverIndex: number)
 Connects to the specified VPN server.
-- `index`: Index of the server from `getServerList()`.s
+- `subscriptionIndex`: Index of the subscription.
+- `serverIndex`: Index of the server from the subscription.
 
 ### 🔹 3. disconnect()
 Disconnects the active VPN connection.
@@ -101,44 +143,51 @@ Disconnects the active VPN connection.
 ### 🔹 4. getConnectionStatus()
 Returns the current connection status (`connected`, `disconnected`, `connecting`, `error`).
 
-### 🔹 5. getServerList()
-Fetches the list of available VPN servers.
+### 🔹 5. getServerList(subscriptionIndex: number)
+Fetches the list of available VPN servers for a subscription.
 
-### 🔹 6. pingServer({required int index})
+### 🔹 6. pingServer(subscriptionIndex: number, serverIndex: number)
 Pings a specific server to check latency.
-- `index`: Index of the server from `getServerList()`.
-- Returns: Latency in milliseconds.
+- Returns: Promise with latency in milliseconds.
 
-### 🔹 7. setRoutingRules({required List<RoutingRule> rules})
+### 🔹 7. setRoutingRules(rules: RoutingRule[])
 Configures routing rules for apps or domains.
-- `rules`: List of routing rules (e.g., route YouTube traffic through VPN, block ads.com).
+- `rules`: Array of routing rules (e.g., route YouTube traffic through VPN, block ads.com).
 
-### 🔹 8. loadSubscriptions({required List<String> subscriptionLinks})
-Loads VPN subscriptions from the provided list of links.
-- `subscriptionLinks`:  A list of subscription file URLs.
+### 🔹 8. addSubscription(url: string)
+Adds a VPN subscription from the provided URL.
 
-### 🔹 9. getSessionStatistics()
+### 🔹 9. addSubscriptions(urls: string[])
+Adds multiple VPN subscriptions from the provided URLs.
+
+### 🔹 10. updateSubscription(subscriptionIndex: number)
+Updates the subscription at the given index.
+
+### 🔹 11. clearSubscriptions()
+Clears all subscriptions.
+
+### 🔹 12. getSessionStatistics()
 Returns statistics for the current VPN session (e.g., data usage, session duration).
 
-### 🔹 10. setAutoConnect({required bool enable})
+### 🔹 13. setAutoConnect(enable: boolean)
 Enables or disables auto-connect functionality.
-- `enable`: `true` to enable, `false` to disable.
 
-### 🔹 11. setKillSwitch({required bool enable})
+### 🔹 14. setKillSwitch(enable: boolean)
 Enables or disables the kill switch.
-- `enable`: `true` to enable, `false` to disable.
 
 ---
 
 ## 🔔 Events
 
+Use `addListener` and `removeListener` to handle events:
+
 ### 📡 1. onConnectionStatusChanged
 Triggered when VPN connection status changes.
-- Payload: `ConnectionStatus` (e.g., `connected`, `disconnected`, `error`).
+- Payload: `status` (e.g., `connected`, `disconnected`, `error`).
 
 ### ⚠️ 2. onError
 Triggered when an error occurs.
-- Payload: `ErrorCode` and `ErrorMessage`.
+- Payload: `errorCode` and `errorMessage`.
 
 ### 🔄 3. onServerSwitched
 Triggered when the VPN server is switched.
@@ -146,7 +195,7 @@ Triggered when the VPN server is switched.
 
 ### 📊 4. onPingResult
 Triggered when a ping operation completes.
-- Payload: `serverIndex` and `latencyInMs`.
+- Payload: `subscriptionIndex`, `serverIndex`, and `latencyInMs`.
 
 ### 🔑 5. onSubscriptionLoaded
 Triggered when a subscription is loaded successfully.
@@ -158,42 +207,43 @@ Triggered periodically with updated data usage statistics.
 
 ### 📌 7. onRoutingRulesApplied
 Triggered when routing rules are applied.
-- Payload: `List<RoutingRule>`.
+- Payload: Array of `RoutingRule`.
 
 ### 🚨 8. onKillSwitchTriggered
 Triggered when the kill switch is activated.
 
 ---
 
-## 📂 Data Models
+## 📂 Type Definitions
 
-### 🔹 1. ConnectionStatus
-Enum: `connecting`, `connected`, `disconnected`, `error`.
+```typescript
+type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
-### 🔹 2. Server
-- `address`
-- `latency`
-- `location`
-- `isPreferred`
+interface Server {
+  address: string;
+  latency: number;
+  location: string;
+  isPreferred: boolean;
+}
 
-### 🔹 3. RoutingRule
-- `appName`
-- `domain`
-- `action` (`block`, `allow`, `routeThroughVPN`).
+interface RoutingRule {
+  appName?: string;
+  domain?: string;
+  action: 'block' | 'allow' | 'proxy';
+}
 
-### 🔹 4. ProxyConfig
-- `type` (`socks5`, `http`)
-- `address`
-- `port`
-- `credentials`
+interface PingResult {
+  subscriptionIndex: number;
+  serverIndex: number;
+  latencyInMs: number;
+}
 
-### 🔹 5. ErrorCode
-Enum: `invalidCredentials`, `serverUnavailable`, `subscriptionExpired`, `unknownError`.
-
-### 🔹 6. SubscriptionDetails
-- `expiryDate`
-- `dataLimit`
-- `usedData`
+interface SubscriptionDetails {
+  expiryDate: string;
+  dataLimit: number;
+  usedData: number;
+}
+```
 
 ---
 
@@ -208,4 +258,3 @@ This project is licensed under the **VPNclient Extended GNU General Public Licen
 
 ## 💬 Support
 For issues or questions, please open an issue on our GitHub repository.
-
