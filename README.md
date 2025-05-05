@@ -1,5 +1,30 @@
 # VPN Client Engine React Native (React Native Module)
 
+Here's a proposed English version of a modified `README.md` for [VPNclient-engine-react-native](https://github.com/VPNclient/VPNclient-engine-react-native), making it clear that Flutter is the main development focus and inviting React Native contributors:
+
+---
+
+## ⚠️ Project Status: Flutter-first
+
+This repository provides a React Native wrapper for [VPNclient Engine](https://github.com/VPNclient/VPNclient-engine).
+**However, the main active development is happening in the [Flutter plugin repository](https://github.com/VPNclient/VPNclient-engine-flutter).**
+
+---
+
+## 🤝 Contributing (Call for Contributors)
+
+We are looking for developers interested in maintaining and improving this React Native integration.
+If you're passionate about networking, VPN technology, or bridging native code with React Native — we’d love your help!
+Feel free to open an issue, start a discussion, or submit a pull request.
+
+---
+
+## 🔗 Related Projects
+
+* Core Engine: [VPNclient-engine](https://github.com/VPNclient/VPNclient-engine)
+* Flutter Plugin: [VPNclient-engine-flutter](https://github.com/VPNclient/VPNclient-engine-flutter)
+* Example App: [VPNclient-app](https://github.com/VPNclient/VPNclient-app)
+  
 **VPN Client Engine React Native** is a React Native module that provides a high-level API for controlling VPN connections from a React Native app. It wraps the native [VPNclient Engine](https://github.com/VPNclient/VPNclient-engine) library, allowing React Native developers to integrate advanced VPN functionality into their apps with ease. With this module, you can start and stop VPN connections, switch servers, apply routing rules, and listen to connection events using simple JavaScript calls, without worrying about platform-specific implementation details.
 
 ## 🚀 Key Features
@@ -246,9 +271,6 @@ interface SubscriptionDetails {
 ```
 
 ---
-
-## 🤝 Contributing
-We welcome contributions! Please fork the repository and submit pull requests.
 
 ## 📜 License
 
